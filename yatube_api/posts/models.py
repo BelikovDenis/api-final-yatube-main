@@ -38,6 +38,9 @@ class Post(models.Model):
         related_name='posts'
     )
 
+    class Meta:
+        ordering = ['-pub_date']
+
     def __str__(self):
         return self.text
 
@@ -60,20 +63,30 @@ class Comment(models.Model):
         db_index=True
     )
 
+    class Meta:
+        ordering = ['-created']
+
 
 class Follow(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='follower')
+        related_name='follower'
+    )
     following = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='following')
+        related_name='following'
+    )
 
     class Meta:
-        constraints = (
+        constraints = [
             models.UniqueConstraint(
                 fields=('user', 'following'),
                 name='unique_follow'
-            ),)
+            ),
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('following')),
+                name='prevent_self_follow'
+            )
+        ]
